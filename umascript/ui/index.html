@@ -4,20 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UmaScript IDE v1.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <div class="topbar">
-    <span class="topbar-logo">UmaScript IDE</span>
-    <span class="topbar-sub">Compilador v1.0 — Análisis Léxico</span>
+    <span class="topbar-logo">🐴 UmaScript IDE</span>
+    <span class="topbar-sub">Compilador v1.0 — Análisis Léxico y Sintáctico</span>
     <div class="topbar-spacer"></div>
-    <button class="btn btn-clear" onclick="limpiarEditor()">Limpiar</button>
-    <button class="btn btn-run" onclick="ejecutarAnalisis()">
-      <svg width="10" height="10" viewBox="0 0 10 10">
-        <polygon points="2,1 9,5 2,9" fill="currentColor"/>
-      </svg>
-      Ejecutar análisis
+    <button class="btn btn-clear" onclick="limpiarEditor()">🗑 Limpiar</button>
+    <button class="btn btn-run" id="btn-run" onclick="iniciarCarrera()">
+      <span class="btn-icon">🏁</span>
+      <span class="btn-text">Iniciar Carrera</span>
     </button>
   </div>
 
@@ -25,6 +25,7 @@
 
     <div class="editor-panel">
       <div class="editor-tabs">
+        <span class="tab-icon">📄</span>
         <div class="editor-tab active">programa.uma</div>
       </div>
       <div class="editor-wrap">
@@ -39,23 +40,27 @@
     <div class="results-panel">
       <div class="results-tabs">
         <div class="results-tab active" data-out="tokens" onclick="showTab(this,'tokens')">
-          Tokens <span class="tab-count" id="count-tokens">0</span>
+          🎯 Tokens <span class="tab-count" id="count-tokens">0</span>
         </div>
         <div class="results-tab" data-out="symbols" onclick="showTab(this,'symbols')">
-          Símbolos <span class="tab-count" id="count-symbols">0</span>
+          📋 Símbolos <span class="tab-count" id="count-symbols">0</span>
         </div>
         <div class="results-tab" data-out="errors" onclick="showTab(this,'errors')">
-          Errores <span class="tab-count" id="count-errors">0</span>
+          ⚠️ Errores <span class="tab-count" id="count-errors">0</span>
+        </div>
+        <div class="results-tab" data-out="tree" onclick="showTab(this,'tree')">
+          🌳 Árbol
         </div>
       </div>
       <div class="results-body" id="results-body">
-        <span class="empty-msg">Presiona "Ejecutar análisis" para ver los resultados...</span>
+        <span class="empty-msg">Presiona "Iniciar Carrera" para analizar tu código...</span>
       </div>
     </div>
 
   </div>
 
   <div class="statusbar">
+    <span>🐴</span>
     <span id="status-tokens">Tokens: —</span>
     <span id="status-errors">Errores: —</span>
     <span id="status-symbols">Símbolos: —</span>
