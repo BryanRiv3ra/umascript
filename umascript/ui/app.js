@@ -215,29 +215,37 @@ function runParser(tokens) {
     if (cur()?.type === 'IDENTIFIER') n.children.push(node(adv().value));
     expect('LPAREN');
     const params = node('parámetros');
-    while (!isEnd() && cur()?.type !== 'RPAREN') { params.children.push(node(adv().value)); if (cur()?.type === 'COMMA') adv(); }
+    while (!isEnd() && cur()?.type !== 'RPAREN') {
+      params.children.push(node(adv().value));
+      if (cur()?.type === 'COMMA') adv();
+    }
     expect('RPAREN'); n.children.push(params);
     n.children.push(parseBlock('Cuerpo')); return n;
   }
 
   function parseTrophy() {
     const n = node('trophy (return)'); adv(); n.children.push(node('trophy'));
-    n.children.push(parseExpr()); if (cur()?.type === 'SEMICOLON') adv(); return n;
+    n.children.push(parseExpr());
+    if (cur()?.type === 'SEMICOLON') adv();
+    return n;
   }
 
   function parseBlock(label) {
     const n = node(label); expect('LBRACE');
-    while (!isEnd() && cur()?.type !== 'RBRACE') { const s = parseStatement(); if (s) n.children.push(s); else break; }
+    while (!isEnd() && cur()?.type !== 'RBRACE') {
+      const s = parseStatement(); if (s) n.children.push(s); else break;
+    }
     expect('RBRACE'); return n;
   }
 
-  function parseExpr() { return parseComparison(); }
+  function parseExpr()       { return parseComparison(); }
 
   function parseComparison() {
     let left = parseAddSub();
     const ops = ['EQUAL','NOT_EQUAL','LESS','GREATER','LESS_EQ','GREATER_EQ','AND','OR'];
     while (!isEnd() && ops.includes(cur()?.type)) {
-      const op = adv(); const n = node(op.value); n.children.push(left); n.children.push(parseAddSub()); left = n;
+      const op = adv(); const n = node(op.value);
+      n.children.push(left); n.children.push(parseAddSub()); left = n;
     }
     return left;
   }
@@ -245,7 +253,8 @@ function runParser(tokens) {
   function parseAddSub() {
     let left = parseMulDiv();
     while (!isEnd() && (cur()?.type === 'PLUS' || cur()?.type === 'MINUS')) {
-      const op = adv(); const n = node(op.value); n.children.push(left); n.children.push(parseMulDiv()); left = n;
+      const op = adv(); const n = node(op.value);
+      n.children.push(left); n.children.push(parseMulDiv()); left = n;
     }
     return left;
   }
@@ -253,15 +262,22 @@ function runParser(tokens) {
   function parseMulDiv() {
     let left = parsePrimary();
     while (!isEnd() && ['MULTIPLY','DIVIDE','MODULO'].includes(cur()?.type)) {
-      const op = adv(); const n = node(op.value); n.children.push(left); n.children.push(parsePrimary()); left = n;
+      const op = adv(); const n = node(op.value);
+      n.children.push(left); n.children.push(parsePrimary()); left = n;
     }
     return left;
   }
 
   function parsePrimary() {
     const t = cur(); if (!t) return node('?');
-    if (t.type === 'LPAREN') { adv(); const e = parseExpr(); if (cur()?.type === 'RPAREN') adv(); return e; }
-    if (['NUMBER_INT','NUMBER_FLOAT','STRING','IDENTIFIER','WIN','LOSS'].includes(t.type)) { adv(); return node(t.value); }
+    if (t.type === 'LPAREN') {
+      adv(); const e = parseExpr();
+      if (cur()?.type === 'RPAREN') adv();
+      return e;
+    }
+    if (['NUMBER_INT','NUMBER_FLOAT','STRING','IDENTIFIER','WIN','LOSS'].includes(t.type)) {
+      adv(); return node(t.value);
+    }
     adv(); return node(t.value);
   }
 
@@ -289,6 +305,7 @@ function renderTree(root) {
   }
 
   function collectNodes(n, arr = []) { arr.push(n); (n.children || []).forEach(c => collectNodes(c, arr)); return arr; }
+
   function collectEdges(n, arr = []) {
     (n.children || []).forEach(c => {
       arr.push({ x1: n._x, y1: n._y + NODE_H/2, x2: c._x, y2: c._y - NODE_H/2 });
@@ -304,16 +321,16 @@ function renderTree(root) {
   const maxY = Math.max(...allNodes.map(n => n._y + NODE_H)) + PADY;
 
   function nodeColor(label) {
-    if (label === 'Programa')             return { fill:'#2a1f50', stroke:'#9070e0', text:'#c0a0f8' };
-    if (label === 'Cuerpo')               return { fill:'#1f2f40', stroke:'#60a8f0', text:'#90c8f8' };
-    if (label.startsWith('Declaración'))  return { fill:'#1a2f28', stroke:'#40c8a0', text:'#70e8c0' };
-    if (label.startsWith('Asignación'))   return { fill:'#1a2f28', stroke:'#40c8a0', text:'#70e8c0' };
-    if (label === 'turf / dirt')          return { fill:'#2f2010', stroke:'#f0c040', text:'#f8d870' };
-    if (label.includes('bucle'))          return { fill:'#2f1020', stroke:'#e060a0', text:'#f090c0' };
-    if (label.includes('función'))        return { fill:'#301828', stroke:'#e060a0', text:'#f090c0' };
-    if (label === 'announce')             return { fill:'#102028', stroke:'#60a8f0', text:'#90c8f8' };
-    if (!isNaN(label))                    return { fill:'#2a1808', stroke:'#f0a850', text:'#f0a850' };
-    if (label.startsWith('"'))            return { fill:'#0f2018', stroke:'#60d890', text:'#60d890' };
+    if (label === 'Programa')            return { fill:'#2a1f50', stroke:'#9070e0', text:'#c0a0f8' };
+    if (label === 'Cuerpo')              return { fill:'#1f2f40', stroke:'#60a8f0', text:'#90c8f8' };
+    if (label.startsWith('Declaración')) return { fill:'#1a2f28', stroke:'#40c8a0', text:'#70e8c0' };
+    if (label.startsWith('Asignación'))  return { fill:'#1a2f28', stroke:'#40c8a0', text:'#70e8c0' };
+    if (label === 'turf / dirt')         return { fill:'#2f2010', stroke:'#f0c040', text:'#f8d870' };
+    if (label.includes('bucle'))         return { fill:'#2f1020', stroke:'#e060a0', text:'#f090c0' };
+    if (label.includes('función'))       return { fill:'#301828', stroke:'#e060a0', text:'#f090c0' };
+    if (label === 'announce')            return { fill:'#102028', stroke:'#60a8f0', text:'#90c8f8' };
+    if (!isNaN(label) && label !== '')   return { fill:'#2a1808', stroke:'#f0a850', text:'#f0a850' };
+    if (label.startsWith('"'))           return { fill:'#0f2018', stroke:'#60d890', text:'#60d890' };
     return { fill:'#1e1c2e', stroke:'#5a5080', text:'#b0a8d0' };
   }
 
@@ -325,7 +342,7 @@ function renderTree(root) {
 
   const nodes = allNodes.map(n => {
     const col = nodeColor(n.label);
-    const rx  = n._x - NODE_W/2, ry = n._y - NODE_H/2;
+    const rx = n._x - NODE_W/2, ry = n._y - NODE_H/2;
     return `<g>
       <rect x="${rx}" y="${ry}" width="${NODE_W}" height="${NODE_H}" rx="8"
             fill="${col.fill}" stroke="${col.stroke}" stroke-width="1.5"/>
@@ -335,7 +352,8 @@ function renderTree(root) {
   }).join('');
 
   return `<div style="overflow:auto;width:100%;height:100%">
-    <svg width="${maxX}" height="${maxY}" xmlns="http://www.w3.org/2000/svg" style="display:block;background:#0f0e17">
+    <svg width="${maxX}" height="${maxY}" xmlns="http://www.w3.org/2000/svg"
+         style="display:block;background:#0f0e17">
       ${edges}${nodes}
     </svg>
   </div>`;
@@ -345,14 +363,17 @@ function renderTree(root) {
 // HELPERS
 // ============================================
 function tokClass(type) {
-  const kws = ['PADDOCK','FINISH','TRAINING','SKILL','TROPHY','TURF','DIRT','RACE','SPRINT','MILE','MEDIUM','LONGRUN','RETIRE','PACE','FRONTPACE','LATEPACE','ANNOUNCE','HEAR','WIN','LOSS'];
+  const kws = ['PADDOCK','FINISH','TRAINING','SKILL','TROPHY','TURF','DIRT','RACE',
+               'SPRINT','MILE','MEDIUM','LONGRUN','RETIRE','PACE','FRONTPACE',
+               'LATEPACE','ANNOUNCE','HEAR','WIN','LOSS'];
   if (kws.includes(type))      return 'c-kw';
   if (TYPES.includes(type))    return 'c-type';
   if (type === 'IDENTIFIER')   return 'c-id';
   if (type === 'STRING')       return 'c-str';
   if (type.includes('NUMBER')) return 'c-num';
   if (type === 'ERROR')        return 'c-err';
-  if (['PLUS','MINUS','MULTIPLY','DIVIDE','MODULO','EQUAL','NOT_EQUAL','LESS','GREATER','LESS_EQ','GREATER_EQ','AND','OR','NOT','ASSIGN'].includes(type)) return 'c-op';
+  if (['PLUS','MINUS','MULTIPLY','DIVIDE','MODULO','EQUAL','NOT_EQUAL',
+       'LESS','GREATER','LESS_EQ','GREATER_EQ','AND','OR','NOT','ASSIGN'].includes(type)) return 'c-op';
   return 'c-sym';
 }
 
@@ -399,6 +420,9 @@ function iniciarCarrera() {
   renderTab(activeTab);
 }
 
+// ============================================
+// LIMPIAR
+// ============================================
 function limpiarEditor() {
   document.getElementById('editor').value = '';
   currentTokens = []; currentErrors = []; currentSymbols = []; currentTree = null;
@@ -413,10 +437,15 @@ function limpiarEditor() {
   updateLineNums();
 }
 
+// ============================================
+// TABS
+// ============================================
 function showTab(el, name) {
   activeTab = name;
   document.querySelectorAll('.results-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
+  const btnFs = document.getElementById('btn-fullscreen');
+  if (btnFs) btnFs.style.display = name === 'tree' ? 'block' : 'none';
   renderTab(name);
 }
 
@@ -424,7 +453,7 @@ function renderTab(name) {
   const body = document.getElementById('results-body');
 
   if (name === 'tree') {
-    body.style.padding = '0';
+    body.style.padding  = '0';
     body.style.overflow = 'hidden';
     body.innerHTML = currentTree
       ? renderTree(currentTree)
@@ -432,7 +461,7 @@ function renderTab(name) {
     return;
   }
 
-  body.style.padding = '10px 14px';
+  body.style.padding  = '10px 14px';
   body.style.overflow = 'auto';
 
   if (currentTokens.length === 0) {
@@ -475,7 +504,28 @@ function renderTab(name) {
   }
 }
 
-// ── Init ──
+// ============================================
+// PANTALLA COMPLETA
+// ============================================
+function toggleFullscreen() {
+  if (!currentTree) return;
+  const existing = document.getElementById('tree-overlay');
+  if (existing) { existing.remove(); return; }
+  const overlay = document.createElement('div');
+  overlay.id = 'tree-overlay';
+  overlay.className = 'tree-fullscreen';
+  overlay.innerHTML = `
+    <button class="tree-fullscreen-close" onclick="document.getElementById('tree-overlay').remove()">
+      ✕ Cerrar
+    </button>
+    ${renderTree(currentTree)}
+  `;
+  document.body.appendChild(overlay);
+}
+
+// ============================================
+// INIT
+// ============================================
 document.addEventListener('DOMContentLoaded', () => {
   updateLineNums();
   const editor = document.getElementById('editor');

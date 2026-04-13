@@ -391,3 +391,54 @@ body {
 ::-webkit-scrollbar-track { background: var(--surface); }
 ::-webkit-scrollbar-thumb { background: var(--pink-dim); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--pink); }
+
+.btn-fullscreen {
+  margin-left: auto;
+  margin-right: 8px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Rajdhani', sans-serif;
+  transition: all .15s;
+}
+.btn-fullscreen:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.tree-fullscreen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #0f0e17;
+  z-index: 9999;
+  overflow: auto;
+  padding: 16px;
+}
+
+.tree-fullscreen-close {
+  position: fixed;
+  top: 14px;
+  right: 20px;
+  z-index: 10000;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--pink);
+  background: var(--pink-dim);
+  color: var(--pink-bright);
+  font-family: 'Rajdhani', sans-serif;
+  transition: all .15s;
+}
+.tree-fullscreen-close:hover {
+  background: var(--pink);
+  color: #fff;
+}
