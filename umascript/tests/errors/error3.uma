@@ -1,0 +1,12 @@
+/* Error 1 — Caracteres no permitidos */
+paddock ErrorCaracteres {
+
+    training speed vel := 850;
+    training wit  uma := "Special Week";
+
+    @ caracter invalido aqui
+    training stamina tiempo := 9.5#;
+
+    announce("Hola" + uma);
+
+} finish

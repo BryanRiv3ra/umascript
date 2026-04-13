@@ -1,0 +1,20 @@
+/* Prueba 2 — Bucle mile con acumulador */
+paddock EntrenamientoMile {
+
+    training speed vel := 600;
+    training power pts := 0;
+
+    announce("Iniciando entrenamiento mile...");
+
+    mile (i := 1; i <= 5; i := i + 1) {
+        pts := pts + vel;
+        announce("Vuelta " + i + " completada");
+    }
+
+    turf (pts > 2500) {
+        announce("Entrenamiento exitoso!");
+    } dirt {
+        announce("Necesitas mas training.");
+    }
+
+} finish

@@ -1,0 +1,17 @@
+/* Prueba 1 — Variables y condicional basico */
+paddock PrimeraCarrera {
+
+    training wit     uma    := "Special Week";
+    training speed   vel    := 850;
+    training stamina tiempo := 9.75;
+    training guts    activa := win;
+
+    announce("Comenzando carrera de: " + uma);
+
+    turf (vel > 800) {
+        announce("Velocidad maxima activada!");
+    } dirt {
+        announce("Sigue entrenando...");
+    }
+
+} finish

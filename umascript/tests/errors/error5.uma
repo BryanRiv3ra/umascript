@@ -1,0 +1,9 @@
+/* Error 4 — Comentario de bloque sin cerrar
+paddock ErrorComentario {
+
+    training speed vel := 750;
+    training wit  uma := "Mejiro McQueen";
+
+    announce("Uma: " + uma);
+
+} finish
