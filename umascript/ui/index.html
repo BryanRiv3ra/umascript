@@ -26,14 +26,31 @@
     <div class="editor-panel">
       <div class="editor-tabs">
         <span class="tab-icon">📄</span>
-        <div class="editor-tab active">programa.uma</div>
+        <div class="editor-tab active">programa.uma</div> 
       </div>
+
+      <div class="examples-bar">
+        <span class="examples-label">Válidos:</span>
+        <button class="btn-example" onclick="cargarEjemplo('RUN1')">RUN1</button>
+        <button class="btn-example" onclick="cargarEjemplo('RUN2')">RUN2</button>
+        <button class="btn-example" onclick="cargarEjemplo('RUN3')">RUN3</button>
+        <button class="btn-example" onclick="cargarEjemplo('RUN4')">RUN4</button>
+        <button class="btn-example" onclick="cargarEjemplo('RUN5')">RUN5</button>
+        <span class="examples-sep">|</span>
+        <span class="examples-label">Errores:</span>
+        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO1')">DROPPEO1</button>
+        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO2')">DROPPEO2</button>
+        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO3')">DROPPEO3</button>
+        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO4')">DROPPEO4</button>
+        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO5')">DROPPEO5</button>
+      </div>
+
       <div class="editor-wrap">
         <div class="line-numbers" id="line-nums"></div>
         <textarea
           id="editor"
           spellcheck="false"
-          placeholder="Escribe tu código UmaScript aquí..."></textarea>
+          placeholder="Escribe tu código UmaScript aquí o selecciona un ejemplo..."></textarea>
       </div>
     </div>
 

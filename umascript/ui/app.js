@@ -8,11 +8,224 @@ const KEYWORDS_MAP = {
 };
 const TYPES = ['SPEED','STAMINA','POWER','GUTS','WIT'];
 
+const EJEMPLOS = {
+  RUN1:
+`/* Prueba 1 — Variables y condicional basico */
+paddock PrimeraCarrera {
+
+    training wit     uma    := "Special Week";
+    training speed   vel    := 850;
+    training stamina tiempo := 9.75;
+    training guts    activa := win;
+
+    announce("Comenzando carrera de: " + uma);
+
+    turf (vel > 800) {
+        announce("Velocidad maxima activada!");
+    } dirt {
+        announce("Sigue entrenando...");
+    }
+
+} finish`,
+
+  RUN2:
+`/* Prueba 2 — Bucle mile con acumulador */
+paddock EntrenamientoMile {
+
+    training speed vel := 600;
+    training power pts := 0;
+
+    announce("Iniciando entrenamiento mile...");
+
+    mile (i := 1; i <= 5; i := i + 1) {
+        pts := pts + vel;
+        announce("Vuelta " + i + " completada");
+    }
+
+    turf (pts > 2500) {
+        announce("Entrenamiento exitoso!");
+    } dirt {
+        announce("Necesitas mas training.");
+    }
+
+} finish`,
+
+  RUN3:
+`/* Prueba 3 — Funcion con skill y trophy */
+paddock CarreraConSkill {
+
+    training speed   vel := 900;
+    training stamina sta := 750;
+
+    skill calcularPower(speed v, stamina s) {
+        training stamina resultado := v * s / 100;
+        trophy resultado;
+    }
+
+    training stamina powerTotal := calcularPower(vel, sta);
+    announce("Power calculado: " + powerTotal);
+
+    turf (powerTotal > 6000) {
+        announce("Listo para el Japan Cup!");
+    } dirt {
+        announce("Sigue entrenando tus stats.");
+    }
+
+} finish`,
+
+  RUN4:
+`/* Prueba 4 — Bucle sprint con retire */
+paddock SprintCarrera {
+
+    training speed  meta    := 1000;
+    training speed  actual  := 500;
+    training power  vueltas := 0;
+
+    announce("Iniciando sprint...");
+
+    sprint (i := 0; i < 10; i := i + 1) {
+        actual  := actual + 100;
+        vueltas := vueltas + 1;
+
+        turf (actual >= meta) {
+            announce("Meta alcanzada en vuelta " + vueltas);
+            retire;
+        }
+
+        announce("Vuelta " + i + " vel=" + actual);
+    }
+
+    announce("Sprint terminado. Vueltas: " + vueltas);
+
+} finish`,
+
+  RUN5:
+`/* Prueba 5 — Simulador completo de carrera */
+paddock SimuladorCarrera {
+
+    training wit     nombre := "Silence Suzuka";
+    training speed   vel    := 920;
+    training stamina sta    := 880;
+    training power   pts    := 0;
+    training guts    gano   := loss;
+
+    announce("=== Japan Cup ===");
+    announce("Uma: " + nombre);
+
+    sprint (i := 1; i <= 3; i := i + 1) {
+        pts := pts + vel;
+        announce("Calentamiento vuelta " + i);
+    }
+
+    mile (i := 1; i <= 6; i := i + 1) {
+        pts := pts + vel + sta;
+
+        turf (i == 3) {
+            announce("Mitad de carrera! Pts: " + pts);
+        } dirt {
+            announce("Vuelta " + i + " Pts: " + pts);
+        }
+    }
+
+    turf (pts > 10000) {
+        gano := win;
+        announce("VICTORIA! " + nombre + " gana!");
+    } dirt {
+        announce("Buen esfuerzo. Pts: " + pts);
+    }
+
+} finish`,
+
+  DROPPEO1:
+`/* Error 1 — Caracteres no permitidos */
+paddock ErrorCaracteres {
+
+    training speed vel := 850;
+    training wit  uma := "Special Week";
+
+    @ caracter invalido aqui
+    training stamina tiempo := 9.5#;
+
+    announce("Hola" + uma);
+
+} finish`,
+
+  DROPPEO2:
+`/* Error 2 — String sin cerrar */
+paddock ErrorString {
+
+    training wit uma := "Special Week;
+    training speed vel := 900;
+
+    announce("Carrera de " + uma);
+
+} finish`,
+
+  DROPPEO3:
+`/* Error 3 — Keywords en mayusculas */
+PADDOCK ErrorMayusculas {
+
+    TRAINING SPEED vel := 850;
+    TRAINING WIT   uma := "Gold Ship";
+
+    TURF (vel > 800) {
+        ANNOUNCE("Velocidad alta!");
+    } DIRT {
+        ANNOUNCE("Velocidad baja");
+    }
+
+} FINISH`,
+
+  DROPPEO4:
+`/* Error 4 — Comentario de bloque sin cerrar
+paddock ErrorComentario {
+
+    training speed vel := 750;
+    training wit  uma := "Mejiro McQueen";
+
+    announce("Uma: " + uma);
+
+} finish`,
+
+  DROPPEO5:
+`/* Error 5 — Multiples errores lexicos */
+paddock ErrorMultiple {
+
+    training speed  vel := 85o;
+    training wit    uma := "Tokai Teio;
+    training stamina sta := 7.2.5;
+
+    $ simbolo invalido
+    training power pts := 0;
+
+} finish`,
+};
+
 let currentTokens  = [];
 let currentErrors  = [];
 let currentSymbols = [];
 let currentTree    = null;
 let activeTab      = 'tokens';
+
+// ============================================
+// CARGAR EJEMPLO
+// ============================================
+function cargarEjemplo(nombre) {
+  const editor = document.getElementById('editor');
+  editor.value = EJEMPLOS[nombre] || '';
+  updateLineNums();
+  currentTokens = []; currentErrors = []; currentSymbols = []; currentTree = null;
+  document.getElementById('results-body').innerHTML = '<span class="empty-msg">Presiona "Iniciar Carrera" para analizar...</span>';
+  document.getElementById('status-tokens').textContent  = 'Tokens: —';
+  document.getElementById('status-errors').textContent  = 'Errores: —';
+  document.getElementById('status-symbols').textContent = 'Símbolos: —';
+  document.getElementById('count-tokens').textContent   = '0';
+  document.getElementById('count-symbols').textContent  = '0';
+  document.getElementById('count-errors').textContent   = '0';
+  document.getElementById('count-errors').className = 'tab-count';
+  const btnFs = document.getElementById('btn-fullscreen');
+  if (btnFs) btnFs.style.display = 'none';
+}
 
 // ============================================
 // LEXER
@@ -226,8 +439,7 @@ function runParser(tokens) {
   function parseTrophy() {
     const n = node('trophy (return)'); adv(); n.children.push(node('trophy'));
     n.children.push(parseExpr());
-    if (cur()?.type === 'SEMICOLON') adv();
-    return n;
+    if (cur()?.type === 'SEMICOLON') adv(); return n;
   }
 
   function parseBlock(label) {
@@ -238,7 +450,7 @@ function runParser(tokens) {
     expect('RBRACE'); return n;
   }
 
-  function parseExpr()       { return parseComparison(); }
+  function parseExpr() { return parseComparison(); }
 
   function parseComparison() {
     let left = parseAddSub();
@@ -270,14 +482,8 @@ function runParser(tokens) {
 
   function parsePrimary() {
     const t = cur(); if (!t) return node('?');
-    if (t.type === 'LPAREN') {
-      adv(); const e = parseExpr();
-      if (cur()?.type === 'RPAREN') adv();
-      return e;
-    }
-    if (['NUMBER_INT','NUMBER_FLOAT','STRING','IDENTIFIER','WIN','LOSS'].includes(t.type)) {
-      adv(); return node(t.value);
-    }
+    if (t.type === 'LPAREN') { adv(); const e = parseExpr(); if (cur()?.type === 'RPAREN') adv(); return e; }
+    if (['NUMBER_INT','NUMBER_FLOAT','STRING','IDENTIFIER','WIN','LOSS'].includes(t.type)) { adv(); return node(t.value); }
     adv(); return node(t.value);
   }
 
@@ -434,6 +640,8 @@ function limpiarEditor() {
   document.getElementById('count-symbols').textContent = '0';
   document.getElementById('count-errors').textContent  = '0';
   document.getElementById('count-errors').className = 'tab-count';
+  const btnFs = document.getElementById('btn-fullscreen');
+  if (btnFs) btnFs.style.display = 'none';
   updateLineNums();
 }
 
