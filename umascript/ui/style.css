@@ -148,7 +148,7 @@ body {
   content: '';
   position: absolute;
   top: 0; left: 48px; right: 0; bottom: 0;
-  background-image: url('Umamusume_Pretty_Derby_game_cover.jpg');
+  background-image: url('https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1540120/capsule_616x353.jpg');
   background-size: cover;
   background-position: center top;
   opacity: 0.07;

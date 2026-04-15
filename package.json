@@ -1,0 +1,12 @@
+{
+  "name": "umascript",
+  "version": "1.0.0",
+  "description": "UmaScript IDE - Compilador",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0"
+  }
+}
