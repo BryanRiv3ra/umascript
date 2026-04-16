@@ -8,197 +8,32 @@ const KEYWORDS_MAP = {
 };
 const TYPES = ['SPEED','STAMINA','POWER','GUTS','WIT'];
 
+const CHARACTER_SPRITES = {
+  idle:   'hacker.jpeg',
+  normal: 'image.png',
+  error:  'santosgigawatss.png'
+};
+
 const EJEMPLOS = {
-  RUN1:
-`/* Prueba 1 — Variables y condicional basico */
-paddock PrimeraCarrera {
+  RUN1: `/* Prueba 1 — Variables y condicional basico */\npaddock PrimeraCarrera {\n\n    training wit     uma    := "Special Week";\n    training speed   vel    := 850;\n    training stamina tiempo := 9.75;\n    training guts    activa := win;\n\n    announce("Comenzando carrera de: " + uma);\n\n    turf (vel > 800) {\n        announce("Velocidad maxima activada!");\n    } dirt {\n        announce("Sigue entrenando...");\n    }\n\n} finish`,
 
-    training wit     uma    := "Special Week";
-    training speed   vel    := 850;
-    training stamina tiempo := 9.75;
-    training guts    activa := win;
+  RUN2: `/* Prueba 2 — Bucle mile con acumulador */\npaddock EntrenamientoMile {\n\n    training speed vel := 600;\n    training power pts := 0;\n\n    announce("Iniciando entrenamiento mile...");\n\n    mile (i := 1; i <= 5; i := i + 1) {\n        pts := pts + vel;\n        announce("Vuelta " + i + " completada");\n    }\n\n    turf (pts > 2500) {\n        announce("Entrenamiento exitoso!");\n    } dirt {\n        announce("Necesitas mas training.");\n    }\n\n} finish`,
 
-    announce("Comenzando carrera de: " + uma);
+  RUN3: `/* Prueba 3 — Funcion con skill y trophy */\npaddock CarreraConSkill {\n\n    training speed   vel := 900;\n    training stamina sta := 750;\n\n    skill calcularPower(speed v, stamina s) {\n        training stamina resultado := v * s / 100;\n        trophy resultado;\n    }\n\n    training stamina powerTotal := calcularPower(vel, sta);\n    announce("Power calculado: " + powerTotal);\n\n    turf (powerTotal > 6000) {\n        announce("Listo para el Japan Cup!");\n    } dirt {\n        announce("Sigue entrenando tus stats.");\n    }\n\n} finish`,
 
-    turf (vel > 800) {
-        announce("Velocidad maxima activada!");
-    } dirt {
-        announce("Sigue entrenando...");
-    }
+  RUN4: `/* Prueba 4 — Bucle sprint con retire */\npaddock SprintCarrera {\n\n    training speed  meta    := 1000;\n    training speed  actual  := 500;\n    training power  vueltas := 0;\n\n    announce("Iniciando sprint...");\n\n    sprint (i := 0; i < 10; i := i + 1) {\n        actual  := actual + 100;\n        vueltas := vueltas + 1;\n\n        turf (actual >= meta) {\n            announce("Meta alcanzada en vuelta " + vueltas);\n            retire;\n        }\n\n        announce("Vuelta " + i + " vel=" + actual);\n    }\n\n} finish`,
 
-} finish`,
+  RUN5: `/* Prueba 5 — Simulador completo de carrera */\npaddock SimuladorCarrera {\n\n    training wit     nombre := "Silence Suzuka";\n    training speed   vel    := 920;\n    training stamina sta    := 880;\n    training power   pts    := 0;\n    training guts    gano   := loss;\n\n    announce("=== Japan Cup ===");\n    announce("Uma: " + nombre);\n\n    sprint (i := 1; i <= 3; i := i + 1) {\n        pts := pts + vel;\n        announce("Calentamiento vuelta " + i);\n    }\n\n    mile (i := 1; i <= 6; i := i + 1) {\n        pts := pts + vel + sta;\n        turf (i == 3) {\n            announce("Mitad de carrera! Pts: " + pts);\n        } dirt {\n            announce("Vuelta " + i + " Pts: " + pts);\n        }\n    }\n\n    turf (pts > 10000) {\n        gano := win;\n        announce("VICTORIA! " + nombre + " gana!");\n    } dirt {\n        announce("Buen esfuerzo. Pts: " + pts);\n    }\n\n} finish`,
 
-  RUN2:
-`/* Prueba 2 — Bucle mile con acumulador */
-paddock EntrenamientoMile {
+  DROPPEO1: `/* Error 1 — Caracteres no permitidos */\npaddock ErrorCaracteres {\n\n    training speed vel := 850;\n    training wit  uma := "Special Week";\n\n    @ caracter invalido aqui\n    training stamina tiempo := 9.5#;\n\n    announce("Hola" + uma);\n\n} finish`,
 
-    training speed vel := 600;
-    training power pts := 0;
+  DROPPEO2: `/* Error 2 — String sin cerrar */\npaddock ErrorString {\n\n    training wit uma := "Special Week;\n    training speed vel := 900;\n\n    announce("Carrera de " + uma);\n\n} finish`,
 
-    announce("Iniciando entrenamiento mile...");
+  DROPPEO3: `/* Error 3 — Keywords en mayusculas */\nPADDOCK ErrorMayusculas {\n\n    TRAINING SPEED vel := 850;\n    TRAINING WIT   uma := "Gold Ship";\n\n    TURF (vel > 800) {\n        ANNOUNCE("Velocidad alta!");\n    } DIRT {\n        ANNOUNCE("Velocidad baja");\n    }\n\n} FINISH`,
 
-    mile (i := 1; i <= 5; i := i + 1) {
-        pts := pts + vel;
-        announce("Vuelta " + i + " completada");
-    }
+  DROPPEO4: `/* Error 4 — Comentario de bloque sin cerrar\npaddock ErrorComentario {\n\n    training speed vel := 750;\n    training wit  uma := "Mejiro McQueen";\n\n    announce("Uma: " + uma);\n\n} finish`,
 
-    turf (pts > 2500) {
-        announce("Entrenamiento exitoso!");
-    } dirt {
-        announce("Necesitas mas training.");
-    }
-
-} finish`,
-
-  RUN3:
-`/* Prueba 3 — Funcion con skill y trophy */
-paddock CarreraConSkill {
-
-    training speed   vel := 900;
-    training stamina sta := 750;
-
-    skill calcularPower(speed v, stamina s) {
-        training stamina resultado := v * s / 100;
-        trophy resultado;
-    }
-
-    training stamina powerTotal := calcularPower(vel, sta);
-    announce("Power calculado: " + powerTotal);
-
-    turf (powerTotal > 6000) {
-        announce("Listo para el Japan Cup!");
-    } dirt {
-        announce("Sigue entrenando tus stats.");
-    }
-
-} finish`,
-
-  RUN4:
-`/* Prueba 4 — Bucle sprint con retire */
-paddock SprintCarrera {
-
-    training speed  meta    := 1000;
-    training speed  actual  := 500;
-    training power  vueltas := 0;
-
-    announce("Iniciando sprint...");
-
-    sprint (i := 0; i < 10; i := i + 1) {
-        actual  := actual + 100;
-        vueltas := vueltas + 1;
-
-        turf (actual >= meta) {
-            announce("Meta alcanzada en vuelta " + vueltas);
-            retire;
-        }
-
-        announce("Vuelta " + i + " vel=" + actual);
-    }
-
-    announce("Sprint terminado. Vueltas: " + vueltas);
-
-} finish`,
-
-  RUN5:
-`/* Prueba 5 — Simulador completo de carrera */
-paddock SimuladorCarrera {
-
-    training wit     nombre := "Silence Suzuka";
-    training speed   vel    := 920;
-    training stamina sta    := 880;
-    training power   pts    := 0;
-    training guts    gano   := loss;
-
-    announce("=== Japan Cup ===");
-    announce("Uma: " + nombre);
-
-    sprint (i := 1; i <= 3; i := i + 1) {
-        pts := pts + vel;
-        announce("Calentamiento vuelta " + i);
-    }
-
-    mile (i := 1; i <= 6; i := i + 1) {
-        pts := pts + vel + sta;
-
-        turf (i == 3) {
-            announce("Mitad de carrera! Pts: " + pts);
-        } dirt {
-            announce("Vuelta " + i + " Pts: " + pts);
-        }
-    }
-
-    turf (pts > 10000) {
-        gano := win;
-        announce("VICTORIA! " + nombre + " gana!");
-    } dirt {
-        announce("Buen esfuerzo. Pts: " + pts);
-    }
-
-} finish`,
-
-  DROPPEO1:
-`/* Error 1 — Caracteres no permitidos */
-paddock ErrorCaracteres {
-
-    training speed vel := 850;
-    training wit  uma := "Special Week";
-
-    @ caracter invalido aqui
-    training stamina tiempo := 9.5#;
-
-    announce("Hola" + uma);
-
-} finish`,
-
-  DROPPEO2:
-`/* Error 2 — String sin cerrar */
-paddock ErrorString {
-
-    training wit uma := "Special Week;
-    training speed vel := 900;
-
-    announce("Carrera de " + uma);
-
-} finish`,
-
-  DROPPEO3:
-`/* Error 3 — Keywords en mayusculas */
-PADDOCK ErrorMayusculas {
-
-    TRAINING SPEED vel := 850;
-    TRAINING WIT   uma := "Gold Ship";
-
-    TURF (vel > 800) {
-        ANNOUNCE("Velocidad alta!");
-    } DIRT {
-        ANNOUNCE("Velocidad baja");
-    }
-
-} FINISH`,
-
-  DROPPEO4:
-`/* Error 4 — Comentario de bloque sin cerrar
-paddock ErrorComentario {
-
-    training speed vel := 750;
-    training wit  uma := "Mejiro McQueen";
-
-    announce("Uma: " + uma);
-
-} finish`,
-
-  DROPPEO5:
-`/* Error 5 — Multiples errores lexicos */
-paddock ErrorMultiple {
-
-    training speed  vel := 85o;
-    training wit    uma := "Tokai Teio;
-    training stamina sta := 7.2.5;
-
-    $ simbolo invalido
-    training power pts := 0;
-
-} finish`,
+  DROPPEO5: `/* Error 5 — Multiples errores lexicos */\npaddock ErrorMultiple {\n\n    training speed  vel := 85o;\n    training wit    uma := "Tokai Teio;\n    training stamina sta := 7.2.5;\n\n    $ simbolo invalido\n    training power pts := 0;\n\n} finish`,
 };
 
 let currentTokens  = [];
@@ -208,23 +43,52 @@ let currentTree    = null;
 let activeTab      = 'tokens';
 
 // ============================================
-// CARGAR EJEMPLO
+// SYNTAX HIGHLIGHTER
 // ============================================
-function cargarEjemplo(nombre) {
+function applyHighlights(text) {
+  let h = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  h = h.replace(/(\/\*[\s\S]*?(?:\*\/|$))/g, '<span class="hl-comment">$1</span>');
+  h = h.replace(/(\/\/[^\n]*)/g, '<span class="hl-comment">$1</span>');
+  h = h.replace(/("(?:[^"\\]|\\.)*"?)/g, '<span class="hl-str">$1</span>');
+  h = h.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="hl-num">$1</span>');
+
+  const allKws = Object.keys(KEYWORDS_MAP);
+  const regexKws = new RegExp(`\\b(${allKws.join('|')})\\b`, 'gi');
+  h = h.replace(regexKws, (match) => {
+    const key = KEYWORDS_MAP[match.toLowerCase()];
+    const isType = TYPES.includes(key);
+    return `<span class="${isType ? 'hl-type' : 'hl-kw'}">${match}</span>`;
+  });
+
+  return h;
+}
+
+function syncScroll() {
   const editor = document.getElementById('editor');
-  editor.value = EJEMPLOS[nombre] || '';
-  updateLineNums();
-  currentTokens = []; currentErrors = []; currentSymbols = []; currentTree = null;
-  document.getElementById('results-body').innerHTML = '<span class="empty-msg">Presiona "Iniciar Carrera" para analizar...</span>';
-  document.getElementById('status-tokens').textContent  = 'Tokens: —';
-  document.getElementById('status-errors').textContent  = 'Errores: —';
-  document.getElementById('status-symbols').textContent = 'Símbolos: —';
-  document.getElementById('count-tokens').textContent   = '0';
-  document.getElementById('count-symbols').textContent  = '0';
-  document.getElementById('count-errors').textContent   = '0';
-  document.getElementById('count-errors').className = 'tab-count';
-  const btnFs = document.getElementById('btn-fullscreen');
-  if (btnFs) btnFs.style.display = 'none';
+  const layer  = document.getElementById('highlighted-layer');
+  const nums   = document.getElementById('line-nums');
+  if (layer) { layer.scrollTop = editor.scrollTop; layer.scrollLeft = editor.scrollLeft; }
+  if (nums)  nums.scrollTop = editor.scrollTop;
+}
+
+function updateEditor() {
+  const editor = document.getElementById('editor');
+  const code   = document.querySelector('#highlighted-layer code');
+  const text   = editor.value;
+
+  if (code) {
+    code.innerHTML = applyHighlights(text) + (text.endsWith('\n') ? ' ' : '');
+  }
+
+  const nums  = document.getElementById('line-nums');
+  if (nums) {
+    const lines = text.split('\n').length;
+    nums.innerHTML = Array.from({ length: lines }, (_, i) => `<span>${i + 1}</span>`).join('');
+  }
 }
 
 // ============================================
@@ -289,14 +153,12 @@ function runLexer(source) {
       const low = v.toLowerCase();
       const type = KEYWORDS_MAP[low] || 'IDENTIFIER';
       if (type !== 'IDENTIFIER' && v !== low)
-        errors.push({ type:'LEXICO', msg:`Keyword en mayúsculas: '${v}' → use '${low}'`, line:l, col:co, val:v });
+        errors.push({ type:'LEXICO', msg:`Keyword en mayúsculas: '${v}' → '${low}'`, line:l, col:co, val:v });
       addTok(type, v, l, co);
       if (type === 'IDENTIFIER') {
         const p2 = tokens[tokens.length - 3], p1 = tokens[tokens.length - 2];
         if (p2?.type === 'TRAINING' && TYPES.includes(p1?.type)) {
-          if (symbols.find(s => s.name === v))
-            errors.push({ type:'LEXICO', msg:`Variable ya declarada: '${v}'`, line:l, col:co, val:v });
-          else
+          if (!symbols.find(s => s.name === v))
             symbols.push({ name:v, type:p1.value, value:null, line:l, col:co });
         }
       }
@@ -428,25 +290,19 @@ function runParser(tokens) {
     if (cur()?.type === 'IDENTIFIER') n.children.push(node(adv().value));
     expect('LPAREN');
     const params = node('parámetros');
-    while (!isEnd() && cur()?.type !== 'RPAREN') {
-      params.children.push(node(adv().value));
-      if (cur()?.type === 'COMMA') adv();
-    }
+    while (!isEnd() && cur()?.type !== 'RPAREN') { params.children.push(node(adv().value)); if (cur()?.type === 'COMMA') adv(); }
     expect('RPAREN'); n.children.push(params);
     n.children.push(parseBlock('Cuerpo')); return n;
   }
 
   function parseTrophy() {
     const n = node('trophy (return)'); adv(); n.children.push(node('trophy'));
-    n.children.push(parseExpr());
-    if (cur()?.type === 'SEMICOLON') adv(); return n;
+    n.children.push(parseExpr()); if (cur()?.type === 'SEMICOLON') adv(); return n;
   }
 
   function parseBlock(label) {
     const n = node(label); expect('LBRACE');
-    while (!isEnd() && cur()?.type !== 'RBRACE') {
-      const s = parseStatement(); if (s) n.children.push(s); else break;
-    }
+    while (!isEnd() && cur()?.type !== 'RBRACE') { const s = parseStatement(); if (s) n.children.push(s); else break; }
     expect('RBRACE'); return n;
   }
 
@@ -527,23 +383,23 @@ function renderTree(root) {
   const maxY = Math.max(...allNodes.map(n => n._y + NODE_H)) + PADY;
 
   function nodeColor(label) {
-    if (label === 'Programa')            return { fill:'#2a1f50', stroke:'#9070e0', text:'#c0a0f8' };
-    if (label === 'Cuerpo')              return { fill:'#1f2f40', stroke:'#60a8f0', text:'#90c8f8' };
-    if (label.startsWith('Declaración')) return { fill:'#1a2f28', stroke:'#40c8a0', text:'#70e8c0' };
-    if (label.startsWith('Asignación'))  return { fill:'#1a2f28', stroke:'#40c8a0', text:'#70e8c0' };
-    if (label === 'turf / dirt')         return { fill:'#2f2010', stroke:'#f0c040', text:'#f8d870' };
-    if (label.includes('bucle'))         return { fill:'#2f1020', stroke:'#e060a0', text:'#f090c0' };
-    if (label.includes('función'))       return { fill:'#301828', stroke:'#e060a0', text:'#f090c0' };
-    if (label === 'announce')            return { fill:'#102028', stroke:'#60a8f0', text:'#90c8f8' };
-    if (!isNaN(label) && label !== '')   return { fill:'#2a1808', stroke:'#f0a850', text:'#f0a850' };
-    if (label.startsWith('"'))           return { fill:'#0f2018', stroke:'#60d890', text:'#60d890' };
-    return { fill:'#1e1c2e', stroke:'#5a5080', text:'#b0a8d0' };
+    if (label === 'Programa')            return { fill:'#1a1040', stroke:'#ff79b4', text:'#ffb3d1' };
+    if (label === 'Cuerpo')              return { fill:'#0d1f35', stroke:'#2196f3', text:'#64b5f6' };
+    if (label.startsWith('Declaración')) return { fill:'#0d2518', stroke:'#4caf50', text:'#81c784' };
+    if (label.startsWith('Asignación'))  return { fill:'#0d2518', stroke:'#4caf50', text:'#81c784' };
+    if (label === 'turf / dirt')         return { fill:'#2a1f00', stroke:'#ffc107', text:'#ffd54f' };
+    if (label.includes('bucle'))         return { fill:'#2a0f1a', stroke:'#ff579a', text:'#ff79b4' };
+    if (label.includes('función'))       return { fill:'#2a1030', stroke:'#ff579a', text:'#ff79b4' };
+    if (label === 'announce')            return { fill:'#0d1f35', stroke:'#2196f3', text:'#64b5f6' };
+    if (!isNaN(label) && label !== '')   return { fill:'#2a1a00', stroke:'#ffd54f', text:'#ffd54f' };
+    if (label.startsWith('"'))           return { fill:'#0d2010', stroke:'#81c784', text:'#81c784' };
+    return { fill:'#1a2030', stroke:'#3e4a57', text:'#a0aab5' };
   }
 
   function trunc(str, max = 14) { return str.length > max ? str.substring(0, max-1) + '…' : str; }
 
   const edges = allEdges.map(e =>
-    `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" stroke="#3a3460" stroke-width="1.5"/>`
+    `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" stroke="#3e4a57" stroke-width="1.5"/>`
   ).join('');
 
   const nodes = allNodes.map(n => {
@@ -559,7 +415,7 @@ function renderTree(root) {
 
   return `<div style="overflow:auto;width:100%;height:100%">
     <svg width="${maxX}" height="${maxY}" xmlns="http://www.w3.org/2000/svg"
-         style="display:block;background:#0f0e17">
+         style="display:block;background:#15191e">
       ${edges}${nodes}
     </svg>
   </div>`;
@@ -587,11 +443,46 @@ function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function updateLineNums() {
-  const editor = document.getElementById('editor');
-  const nums   = document.getElementById('line-nums');
-  const count  = editor.value.split('\n').length;
-  nums.innerHTML = Array.from({ length: count }, (_, i) => `<span>${i + 1}</span>`).join('');
+function setSprite(state) {
+  const sprite = document.getElementById('character-sprite');
+  if (sprite) sprite.src = CHARACTER_SPRITES[state] || CHARACTER_SPRITES.idle;
+}
+
+// ============================================
+// CARGAR EJEMPLO
+// ============================================
+function cargarEjemplo(nombre) {
+  document.getElementById('editor').value = EJEMPLOS[nombre] || '';
+  updateEditor();
+  currentTokens = []; currentErrors = []; currentSymbols = []; currentTree = null;
+  resetResultados();
+  setSprite('idle');
+}
+
+function resetResultados() {
+  document.getElementById('results-body').innerHTML = '<span class="empty-msg">Esperando inicio de carrera...</span>';
+  document.getElementById('status-tokens').textContent  = 'Tokens: —';
+  document.getElementById('status-errors').textContent  = 'Errores: —';
+  document.getElementById('status-symbols').textContent = 'Símbolos: —';
+  document.getElementById('count-tokens').textContent   = '0';
+  document.getElementById('count-symbols').textContent  = '0';
+  document.getElementById('count-errors').textContent   = '0';
+  document.getElementById('count-errors').className = 'tab-count';
+  const dialog = document.getElementById('dialog-box');
+  if (dialog) dialog.classList.remove('error-state');
+  const btnFs = document.getElementById('btn-fullscreen');
+  if (btnFs) btnFs.style.display = 'none';
+}
+
+// ============================================
+// LIMPIAR
+// ============================================
+function limpiarEditor() {
+  document.getElementById('editor').value = '';
+  updateEditor();
+  currentTokens = []; currentErrors = []; currentSymbols = []; currentTree = null;
+  resetResultados();
+  setSprite('idle');
 }
 
 // ============================================
@@ -623,26 +514,16 @@ function iniciarCarrera() {
   document.getElementById('count-errors').textContent   = currentErrors.length;
   document.getElementById('count-errors').className     = currentErrors.length > 0 ? 'tab-count has-errors' : 'tab-count';
 
-  renderTab(activeTab);
-}
+  const dialog = document.getElementById('dialog-box');
+  if (currentErrors.length > 0) {
+    if (dialog) dialog.classList.add('error-state');
+    setSprite('error');
+  } else {
+    if (dialog) dialog.classList.remove('error-state');
+    setSprite('normal');
+  }
 
-// ============================================
-// LIMPIAR
-// ============================================
-function limpiarEditor() {
-  document.getElementById('editor').value = '';
-  currentTokens = []; currentErrors = []; currentSymbols = []; currentTree = null;
-  document.getElementById('results-body').innerHTML = '<span class="empty-msg">Editor limpiado.</span>';
-  document.getElementById('status-tokens').textContent  = 'Tokens: —';
-  document.getElementById('status-errors').textContent  = 'Errores: —';
-  document.getElementById('status-symbols').textContent = 'Símbolos: —';
-  document.getElementById('count-tokens').textContent  = '0';
-  document.getElementById('count-symbols').textContent = '0';
-  document.getElementById('count-errors').textContent  = '0';
-  document.getElementById('count-errors').className = 'tab-count';
-  const btnFs = document.getElementById('btn-fullscreen');
-  if (btnFs) btnFs.style.display = 'none';
-  updateLineNums();
+  renderTab(activeTab);
 }
 
 // ============================================
@@ -665,15 +546,15 @@ function renderTab(name) {
     body.style.overflow = 'hidden';
     body.innerHTML = currentTree
       ? renderTree(currentTree)
-      : '<span class="empty-msg" style="padding:10px 14px;display:block">Presiona Iniciar Carrera para ver el árbol...</span>';
+      : '<span class="empty-msg" style="padding:12px;display:block">Presiona Iniciar Carrera para ver el árbol...</span>';
     return;
   }
 
-  body.style.padding  = '10px 14px';
+  body.style.padding  = '10px 12px';
   body.style.overflow = 'auto';
 
   if (currentTokens.length === 0) {
-    body.innerHTML = '<span class="empty-msg">Presiona "Iniciar Carrera" para ver los resultados...</span>';
+    body.innerHTML = '<span class="empty-msg">Presiona Iniciar Carrera para ver resultados...</span>';
     return;
   }
 
@@ -681,8 +562,8 @@ function renderTab(name) {
     const rows = currentTokens.filter(t => t.type !== 'EOF').map(t =>
       `<div class="t-row">
         <span class="${tokClass(t.type)}">${t.type}</span>
-        <span class="c-val">${esc(t.value)}</span>
-        <span class="c-pos">L${t.line}:C${t.col}</span>
+        <span style="color:#fff">${esc(t.value)}</span>
+        <span style="color:var(--text-muted)">L${t.line}:C${t.col}</span>
       </div>`).join('');
     body.innerHTML = `<div class="t-header"><span>Tipo</span><span>Valor</span><span>Posición</span></div>${rows}`;
   }
@@ -693,22 +574,22 @@ function renderTab(name) {
       `<div class="s-row">
         <span class="s-name">${s.name}</span>
         <span class="s-type">${s.type}</span>
-        <span class="s-val">${s.value ?? 'null'}</span>
-        <span class="s-line">L${s.line}:C${s.col}</span>
+        <span style="color:#fff">${s.value ?? 'null'}</span>
+        <span style="color:var(--text-muted)">L${s.line}:C${s.col}</span>
       </div>`).join('');
     body.innerHTML = `<div class="s-header"><span>Nombre</span><span>Tipo</span><span>Valor</span><span>Posición</span></div>${rows}`;
   }
 
   else if (name === 'errors') {
-    if (!currentErrors.length) { body.innerHTML = '<span class="success-msg">Sin errores encontrados.</span>'; return; }
+    if (!currentErrors.length) { body.innerHTML = '<span class="success-msg">¡Carrera Perfecta! Sin errores.</span>'; return; }
     const rows = currentErrors.map(e =>
       `<div class="e-row">
         <span class="e-type">${e.type}</span>
-        <span class="e-pos">L${e.line}:C${e.col}</span>
-        <span class="e-val">"${esc(e.val)}"</span>
+        <span style="color:var(--text-muted)">L${e.line}:C${e.col}</span>
+        <span style="color:var(--uma-gold)">"${esc(e.val)}"</span>
         <span class="e-msg">${e.msg}</span>
       </div>`).join('');
-    body.innerHTML = `<div class="e-header"><span>Tipo</span><span>Posición</span><span>Valor</span><span>Descripción</span></div>${rows}`;
+    body.innerHTML = `<div class="e-header"><span>Tipo</span><span>Pos.</span><span>Valor</span><span>Descripción</span></div>${rows}`;
   }
 }
 
@@ -735,17 +616,42 @@ function toggleFullscreen() {
 // INIT
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-  updateLineNums();
   const editor = document.getElementById('editor');
-  const nums   = document.getElementById('line-nums');
-  editor.addEventListener('scroll', () => nums.scrollTop = editor.scrollTop);
-  editor.addEventListener('input', updateLineNums);
+
+  const ejemploPorDefecto =
+`/* Bienvenido a UmaScript!
+   Ejemplo basico de uso del lenguaje */
+paddock MiPrimeraCarrera {
+
+    training wit     nombre   := "Special Week";
+    training speed   vel      := 850;
+    training stamina tiempo   := 9.75;
+    training guts    campeona := win;
+
+    announce("Hola! Esta es tu primera carrera con: " + nombre);
+    announce("Velocidad: " + vel);
+
+    turf (vel > 800) {
+        announce("Velocidad excelente! Lista para competir!");
+    } dirt {
+        announce("Necesitas mas entrenamiento...");
+    }
+
+} finish`;
+
+  editor.value = ejemploPorDefecto;
+  updateEditor();
+
+  editor.addEventListener('input',  updateEditor);
+  editor.addEventListener('scroll', syncScroll);
+
   editor.addEventListener('keydown', e => {
     if (e.key === 'Tab') {
       e.preventDefault();
       const s = editor.selectionStart;
       editor.value = editor.value.substring(0, s) + '    ' + editor.value.substring(editor.selectionEnd);
       editor.selectionStart = editor.selectionEnd = s + 4;
+      updateEditor();
     }
   });
 });

@@ -3,32 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UmaScript IDE v1.0</title>
+  <title>UMAScript IDE - Visual Novel Style</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="vn-bg"></div>
 
-  <div class="topbar">
-    <span class="topbar-logo">🐴 UmaScript IDE</span>
-    <span class="topbar-sub">Compilador v1.0 — Análisis Léxico y Sintáctico</span>
-    <div class="topbar-spacer"></div>
+  <div class="top-menu">
     <button class="btn btn-clear" onclick="limpiarEditor()">🗑 Limpiar</button>
-    <button class="btn btn-run" id="btn-run" onclick="iniciarCarrera()">
-      <span class="btn-icon">🏁</span>
-      <span class="btn-text">Iniciar Carrera</span>
-    </button>
+    <button class="btn btn-run" id="btn-run" onclick="iniciarCarrera()">🏁 INICIAR CARRERA</button>
   </div>
 
-  <div class="workspace">
+  <div class="vn-workspace">
 
-    <div class="editor-panel">
-      <div class="editor-tabs">
-        <span class="tab-icon">📄</span>
-        <div class="editor-tab active">programa.uma</div> 
+    <div class="character-col">
+      <div class="vn-character-frame" style="margin-top: 20px;">
+        <img src="hacker.jpeg" alt="Personaje" class="vn-character-sprite" id="character-sprite">
       </div>
+    </div>
 
+    <div class="vn-editor-panel">
       <div class="examples-bar">
         <span class="examples-label">Válidos:</span>
         <button class="btn-example" onclick="cargarEjemplo('RUN1')">RUN1</button>
@@ -38,53 +34,56 @@
         <button class="btn-example" onclick="cargarEjemplo('RUN5')">RUN5</button>
         <span class="examples-sep">|</span>
         <span class="examples-label">Errores:</span>
-        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO1')">DROPPEO1</button>
-        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO2')">DROPPEO2</button>
-        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO3')">DROPPEO3</button>
-        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO4')">DROPPEO4</button>
-        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO5')">DROPPEO5</button>
+        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO1')">DROP1</button>
+        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO2')">DROP2</button>
+        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO3')">DROP3</button>
+        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO4')">DROP4</button>
+        <button class="btn-example btn-error" onclick="cargarEjemplo('DROPPEO5')">DROP5</button>
       </div>
-
       <div class="editor-wrap">
         <div class="line-numbers" id="line-nums"></div>
-        <textarea
-          id="editor"
-          spellcheck="false"
-          placeholder="Escribe tu código UmaScript aquí o selecciona un ejemplo..."></textarea>
+        <div class="editor-container">
+          <pre id="highlighted-layer" aria-hidden="true"><code></code></pre>
+          <textarea id="editor" spellcheck="false" placeholder="Escribe tu código UmaScript aquí..."></textarea>
+        </div>
       </div>
     </div>
 
-    <div class="results-panel">
-      <div class="results-tabs">
-        <div class="results-tab active" data-out="tokens" onclick="showTab(this,'tokens')">
-          🎯 Tokens <span class="tab-count" id="count-tokens">0</span>
+  
+
+    <div class="vn-dialog-box" id="dialog-box">
+      <div class="vn-dialog-content">
+        <div class="results-tabs">
+          <div class="results-tab active" data-out="tokens" onclick="showTab(this,'tokens')">
+            🎯 Tokens <span class="tab-count" id="count-tokens">0</span>
+          </div>
+          <div class="results-tab" data-out="symbols" onclick="showTab(this,'symbols')">
+            📋 Stats <span class="tab-count" id="count-symbols">0</span>
+          </div>
+          <div class="results-tab" data-out="errors" onclick="showTab(this,'errors')">
+            ⚠️ Faltas <span class="tab-count" id="count-errors">0</span>
+          </div>
+          <div class="results-tab" data-out="tree" onclick="showTab(this,'tree')">
+            🌳 Árbol
+          </div>
+          <button class="btn-fullscreen" id="btn-fullscreen" onclick="toggleFullscreen()" style="display:none">
+            ⛶ Full
+          </button>
         </div>
-        <div class="results-tab" data-out="symbols" onclick="showTab(this,'symbols')">
-          📋 Símbolos <span class="tab-count" id="count-symbols">0</span>
+        <div class="results-body" id="results-body">
+          <span class="empty-msg">Esperando inicio de carrera...</span>
         </div>
-        <div class="results-tab" data-out="errors" onclick="showTab(this,'errors')">
-          ⚠️ Errores <span class="tab-count" id="count-errors">0</span>
-        </div>
-        <div class="results-tab" data-out="tree" onclick="showTab(this,'tree')">
-          🌳 Árbol
-        </div>
-        <button class="btn-fullscreen" id="btn-fullscreen" onclick="toggleFullscreen()" style="display:none">
-          ⛶ Pantalla completa
-        </button>
-      </div>
-      <div class="results-body" id="results-body">
-        <span class="empty-msg">Presiona "Iniciar Carrera" para analizar tu código...</span>
       </div>
     </div>
 
   </div>
 
   <div class="statusbar">
-    <span>🐴</span>
+    <span>🏆 Campus Jutiapa 2026</span>
     <span id="status-tokens">Tokens: —</span>
     <span id="status-errors">Errores: —</span>
     <span id="status-symbols">Símbolos: —</span>
-    <span class="statusbar-right">UmaScript v1.0 | UTF-8 | Campus Jutiapa 2026</span>
+    <span class="statusbar-right">UMAScript v1.0 | UTF-8</span>
   </div>
 
   <script src="app.js"></script>
