@@ -184,7 +184,8 @@ function runLexer(source) {
 // PARSER
 // ============================================
 function runParser(tokens) {
-  const toks = tokens.filter(t => t.type !== 'EOF' && t.type !== 'ERROR');
+  // Incluir tokens ERROR del léxico — se muestran como nodos rojos en el árbol
+  const toks = tokens.filter(t => t.type !== 'EOF');
   const errors = [];
   let pos = 0;
 
@@ -192,19 +193,32 @@ function runParser(tokens) {
   const adv   = () => toks[pos++] ?? null;
   const isEnd = () => pos >= toks.length;
 
+  // Crea un nodo de error que muestra el VALOR REAL del token con recuadro rojo
+  function errTokenNode(tok, errType) {
+    return {
+      label:     tok?.value ?? '?',
+      children:  [],
+      isError:   true,
+      errorType: errType || 'SINTÁCTICO',
+      errorLine: tok?.line ?? 0,
+      errorCol:  tok?.col  ?? 0
+    };
+  }
+
   function expect(type, parent) {
     const t = cur();
     if (t?.type === type) return adv();
-    const msg = `Se esperaba '${type}', encontró '${t?.type ?? "EOF"}'`;
-    errors.push({ type:'SINTACTICO', msg, line:t?.line??0, col:t?.col??0, val:t?.value??'' });
-    if (parent) parent.children.push(errNode(`${msg}`, 'SINTÁCTICO', t?.line??0, t?.col??0));
+    // El token encontrado es incorrecto: lo mostramos como nodo rojo con su valor real
+    const errType = (t?.type === 'ERROR') ? 'LÉXICO' : 'SINTÁCTICO';
+    const msg = `Se esperaba '${type}', encontró '${t?.value ?? t?.type ?? "EOF"}'`;
+    errors.push({ type: errType === 'LÉXICO' ? 'LEXICO' : 'SINTACTICO', msg, line:t?.line??0, col:t?.col??0, val:t?.value??'' });
+    if (parent && t) parent.children.push(errTokenNode(t, errType));
     return null;
   }
 
   function node(label, children = []) { return { label, children, isError: false }; }
   function errNode(msg, errType, line, col) {
-    const prefix = errType === 'LÉXICO' ? '🔴' : errType === 'SEMÁNTICO' ? '🟣' : '🟠';
-    return { label: `${prefix} ${msg}`, children: [], isError: true, errorType: errType || 'SINTÁCTICO', errorLine: line || 0, errorCol: col || 0 };
+    return { label: msg, children: [], isError: true, errorType: errType || 'SINTÁCTICO', errorLine: line || 0, errorCol: col || 0 };
   }
 
   function parseProgram() {
@@ -234,6 +248,11 @@ function runParser(tokens) {
       case 'RETIRE':     adv(); return node('retire');
       case 'PACE':       adv(); return node('pace');
       case 'IDENTIFIER': return parseAssign();
+      // Token inválido del léxico → aparece en el árbol con recuadro rojo
+      case 'ERROR': {
+        const tok = adv();
+        return errTokenNode(tok, 'LÉXICO');
+      }
       default: adv(); return null;
     }
   }
@@ -346,6 +365,8 @@ function runParser(tokens) {
     const t = cur(); if (!t) return node('?');
     if (t.type === 'LPAREN') { adv(); const e = parseExpr(); if (cur()?.type === 'RPAREN') adv(); return e; }
     if (['NUMBER_INT','NUMBER_FLOAT','STRING','IDENTIFIER','WIN','LOSS'].includes(t.type)) { adv(); return node(t.value); }
+    // Token ERROR en expresión → nodo rojo con el carácter inválido
+    if (t.type === 'ERROR') { adv(); return errTokenNode(t, 'LÉXICO'); }
     adv(); return node(t.value);
   }
 
@@ -579,75 +600,8 @@ function iniciarCarrera() {
   const parse = runParser(currentTokens);
   currentTree = parse.tree;
   parse.errors.forEach(e => currentErrors.push(e));
-
-  // ── Análisis semántico básico: variables usadas sin declarar ──
-  const declaredVars = new Set(currentSymbols.map(s => s.name));
-  const semanticErrors = [];
-  currentTokens.forEach(tok => {
-    if (tok.type === 'IDENTIFIER' && !declaredVars.has(tok.value)) {
-      // Heurística: si el identificador no es nombre de programa ni de función conocida
-      // Solo reportar si fue usado en contexto de expresión (después de := o en condición)
-      // Simplificación: marcar solo si fue visto pero no está en la tabla de símbolos
-      // (se filtra para no duplicar errores ya reportados por el parser)
-      const alreadyInSyntax = parse.errors.some(e => e.val === tok.value);
-      if (!alreadyInSyntax) {
-        // No reportar el identificador raíz (nombre del paddock) ni funciones
-        const idx = currentTokens.indexOf(tok);
-        const prev = currentTokens[idx - 1];
-        const isPaddockName = prev?.type === 'PADDOCK';
-        const isSkillName   = prev?.type === 'SKILL';
-        if (!isPaddockName && !isSkillName) {
-          semanticErrors.push({ type:'SEMÁNTICO', msg:`Variable '${tok.value}' usada sin declarar`, line:tok.line, col:tok.col, val:tok.value });
-        }
-      }
-    }
-  });
-  semanticErrors.forEach(e => currentErrors.push(e));
-
-  // ── Inyectar errores en el árbol como nodos hijos del nodo raíz ──
-  if (currentTree) {
-    // Errores léxicos → nodo rojo por cada uno
-    if (lex.errors.length > 0) {
-      const lexBranch = {
-        label: `Errores Léxicos (${lex.errors.length})`,
-        children: [],
-        isError: true,
-        errorType: 'LÉXICO'
-      };
-      lex.errors.forEach(e => {
-        lexBranch.children.push({
-          label: `${e.msg} — "${e.val}"`,
-          children: [],
-          isError: true,
-          errorType: 'LÉXICO',
-          errorLine: e.line,
-          errorCol: e.col
-        });
-      });
-      currentTree.children.unshift(lexBranch);
-    }
-
-    // Errores semánticos → nodo violeta
-    if (semanticErrors.length > 0) {
-      const semBranch = {
-        label: `Errores Semánticos (${semanticErrors.length})`,
-        children: [],
-        isError: true,
-        errorType: 'SEMÁNTICO'
-      };
-      semanticErrors.forEach(e => {
-        semBranch.children.push({
-          label: `${e.msg}`,
-          children: [],
-          isError: true,
-          errorType: 'SEMÁNTICO',
-          errorLine: e.line,
-          errorCol: e.col
-        });
-      });
-      currentTree.children.unshift(semBranch);
-    }
-  }
+  // Los errores léxicos ya aparecen inline en el árbol como nodos rojos
+  // gracias a que runParser ahora incluye los tokens ERROR en el stream
 
   const realToks = currentTokens.filter(t => t.type !== 'EOF');
   document.getElementById('status-tokens').textContent  = `Tokens: ${realToks.length}`;
