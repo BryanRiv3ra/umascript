@@ -203,7 +203,8 @@ function runParser(tokens) {
 
   function node(label, children = []) { return { label, children, isError: false }; }
   function errNode(msg, errType, line, col) {
-    return { label: `❌ ${msg}`, children: [], isError: true, errorType: errType || 'SINTÁCTICO', errorLine: line || 0, errorCol: col || 0 };
+    const prefix = errType === 'LÉXICO' ? '🔴' : errType === 'SEMÁNTICO' ? '🟣' : '🟠';
+    return { label: `${prefix} ${msg}`, children: [], isError: true, errorType: errType || 'SINTÁCTICO', errorLine: line || 0, errorCol: col || 0 };
   }
 
   function parseProgram() {
@@ -357,7 +358,7 @@ function runParser(tokens) {
 function renderTree(root) {
   if (!root) return '<span class="empty-msg">Sin árbol generado.</span>';
 
-  const ERR_NODE_W = 220, NODE_W = 120, NODE_H = 34, PADY = 60, PADX = 20;
+  const ERR_NODE_W = 240, NODE_W = 120, NODE_H = 36, PADY = 70, PADX = 24;
 
   function getNodeW(n) { return n.isError ? ERR_NODE_W : NODE_W; }
 
@@ -378,23 +379,30 @@ function renderTree(root) {
 
   function collectEdges(n, arr = []) {
     (n.children || []).forEach(c => {
-      arr.push({ x1: n._x, y1: n._y + NODE_H/2, x2: c._x, y2: c._y - NODE_H/2, isError: c.isError || false });
+      arr.push({ x1: n._x, y1: n._y + NODE_H/2, x2: c._x, y2: c._y - NODE_H/2, isError: c.isError || false, errType: c.errorType || null });
       collectEdges(c, arr);
     });
     return arr;
   }
 
-  calcSize(root); assignPos(root, 0, 40);
+  calcSize(root); assignPos(root, 0, 50);
   const allNodes = collectNodes(root);
   const allEdges = collectEdges(root);
   const maxX = Math.max(...allNodes.map(n => n._x + getNodeW(n)/2)) + PADX;
   const maxY = Math.max(...allNodes.map(n => n._y + NODE_H)) + PADY;
 
+  // Paleta de colores según tipo de error
+  function errPalette(errType) {
+    if (errType === 'LÉXICO')     return { fill:'#2d0a0a', stroke:'#f44336', glow:'#f44336', text:'#ff6b6b', badge:'#c62828' };
+    if (errType === 'SINTÁCTICO') return { fill:'#2d1a00', stroke:'#ff9800', glow:'#ff9800', text:'#ffb74d', badge:'#e65100' };
+    if (errType === 'SEMÁNTICO')  return { fill:'#1e0a2d', stroke:'#ce93d8', glow:'#ab47bc', text:'#e1bee7', badge:'#7b1fa2' };
+    // fallback sintáctico
+    return { fill:'#2d1a00', stroke:'#ff9800', glow:'#ff9800', text:'#ffb74d', badge:'#e65100' };
+  }
+
   function nodeColor(n) {
     const label = n.label;
-    // ── Nodos de error → ROJO ──
-    if (n.isError)                       return { fill:'#3a0808', stroke:'#f44336', text:'#ff5252' };
-    if (label === 'Errores Léxicos')     return { fill:'#3a0808', stroke:'#f44336', text:'#ff5252' };
+    if (n.isError) return errPalette(n.errorType);
     if (label === 'Programa')            return { fill:'#1a1040', stroke:'#ff79b4', text:'#ffb3d1' };
     if (label === 'Cuerpo')              return { fill:'#0d1f35', stroke:'#2196f3', text:'#64b5f6' };
     if (label.startsWith('Declaración')) return { fill:'#0d2518', stroke:'#4caf50', text:'#81c784' };
@@ -408,12 +416,36 @@ function renderTree(root) {
     return { fill:'#1a2030', stroke:'#3e4a57', text:'#a0aab5' };
   }
 
+  function edgeColor(e) {
+    if (!e.isError) return '#3e4a57';
+    if (e.errType === 'LÉXICO')     return '#f44336';
+    if (e.errType === 'SINTÁCTICO') return '#ff9800';
+    if (e.errType === 'SEMÁNTICO')  return '#ab47bc';
+    return '#ff9800';
+  }
+
   function trunc(str, max = 14) { return str.length > max ? str.substring(0, max-1) + '…' : str; }
 
+  // Definiciones de filtros SVG para glow
+  const defs = `<defs>
+    <filter id="glow-red" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-orange" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-purple" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>`;
+
   const edges = allEdges.map(e => {
-    const color = e.isError ? '#f44336' : '#3e4a57';
+    const color = edgeColor(e);
     const dash  = e.isError ? ' stroke-dasharray="6,3"' : '';
-    return `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" stroke="${color}" stroke-width="1.5"${dash}/>`;
+    return `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" stroke="${color}" stroke-width="${e.isError ? 2 : 1.5}"${dash}/>`;
   }).join('');
 
   const nodes = allNodes.map(n => {
@@ -421,21 +453,37 @@ function renderTree(root) {
     const nw  = getNodeW(n);
     const rx  = n._x - nw/2, ry = n._y - NODE_H/2;
     let svg = `<g>`;
-    // Glow effect for error nodes
+
     if (n.isError) {
-      svg += `<rect x="${rx-2}" y="${ry-2}" width="${nw+4}" height="${NODE_H+4}" rx="10" fill="none" stroke="#f44336" stroke-width="1" opacity="0.4"/>`;
+      // Outer glow pulse ring
+      const glowFilter = n.errorType === 'LÉXICO' ? 'glow-red' : n.errorType === 'SEMÁNTICO' ? 'glow-purple' : 'glow-orange';
+      svg += `<rect x="${rx-3}" y="${ry-3}" width="${nw+6}" height="${NODE_H+6}" rx="11" fill="${col.glow}" opacity="0.15" filter="url(#${glowFilter})"/>`;
+      svg += `<rect x="${rx-1}" y="${ry-1}" width="${nw+2}" height="${NODE_H+2}" rx="10" fill="none" stroke="${col.stroke}" stroke-width="1" opacity="0.5"/>`;
     }
+
+    // Main box
     svg += `<rect x="${rx}" y="${ry}" width="${nw}" height="${NODE_H}" rx="8"
-            fill="${col.fill}" stroke="${col.stroke}" stroke-width="${n.isError ? 2.5 : 1.5}"/>`;
+            fill="${col.fill}" stroke="${col.stroke}" stroke-width="${n.isError ? 2 : 1.5}"/>`;
+
     if (n.isError && n.errorType) {
-      // Badge with error type
+      // Tipo badge pill
       const badgeText = n.errorType;
-      const badgeW = badgeText.length * 6 + 10;
-      svg += `<rect x="${n._x - badgeW/2}" y="${ry - 14}" width="${badgeW}" height="14" rx="4" fill="#f44336"/>`;
-      svg += `<text x="${n._x}" y="${ry - 4}" text-anchor="middle" font-family="Rajdhani,sans-serif" font-size="9" font-weight="700" fill="#fff">${badgeText}</text>`;
+      const badgeW = badgeText.length * 7 + 14;
+      svg += `<rect x="${n._x - badgeW/2}" y="${ry - 16}" width="${badgeW}" height="16" rx="5" fill="${col.badge}"/>`;
+      svg += `<text x="${n._x}" y="${ry - 4}" text-anchor="middle" font-family="Rajdhani,sans-serif" font-size="9" font-weight="800" fill="#fff" letter-spacing="0.5">${badgeText}</text>`;
+
+      // Línea de posición si existe
+      const posText = n.errorLine ? `L${n.errorLine}:C${n.errorCol}` : '';
+      if (posText) {
+        svg += `<text x="${rx + nw - 4}" y="${ry + NODE_H - 4}" text-anchor="end" font-family="Consolas,monospace" font-size="8" fill="${col.text}" opacity="0.7">${posText}</text>`;
+      }
     }
+
+    // Label text
+    const labelClean = n.label.replace(/^[🔴🟠🟣❌]\s*/, '');
+    const displayLabel = n.isError ? labelClean : n.label;
     svg += `<text x="${n._x}" y="${n._y + 5}" text-anchor="middle"
-            font-family="Consolas,monospace" font-size="${n.isError ? 10 : 11}" fill="${col.text}">${trunc(n.label, n.isError ? 28 : 14)}</text>`;
+            font-family="Consolas,monospace" font-size="${n.isError ? 10 : 11}" fill="${col.text}">${trunc(displayLabel, n.isError ? 30 : 14)}</text>`;
     svg += `</g>`;
     return svg;
   }).join('');
@@ -443,7 +491,7 @@ function renderTree(root) {
   return `<div style="overflow:auto;width:100%;height:100%">
     <svg width="${maxX}" height="${maxY}" xmlns="http://www.w3.org/2000/svg"
          style="display:block;background:#15191e">
-      ${edges}${nodes}
+      ${defs}${edges}${nodes}
     </svg>
   </div>`;
 }
@@ -532,13 +580,73 @@ function iniciarCarrera() {
   currentTree = parse.tree;
   parse.errors.forEach(e => currentErrors.push(e));
 
-  // Inyectar errores léxicos como rama del árbol
-  if (lex.errors.length > 0 && currentTree) {
-    const lexErrBranch = { label: 'Errores Léxicos', children: [], isError: true, errorType: 'LÉXICO' };
-    lex.errors.forEach(e => {
-      lexErrBranch.children.push({ label: `❌ L${e.line}:C${e.col} ${e.msg}`, children: [], isError: true, errorType: 'LÉXICO', errorLine: e.line, errorCol: e.col });
-    });
-    currentTree.children.unshift(lexErrBranch);
+  // ── Análisis semántico básico: variables usadas sin declarar ──
+  const declaredVars = new Set(currentSymbols.map(s => s.name));
+  const semanticErrors = [];
+  currentTokens.forEach(tok => {
+    if (tok.type === 'IDENTIFIER' && !declaredVars.has(tok.value)) {
+      // Heurística: si el identificador no es nombre de programa ni de función conocida
+      // Solo reportar si fue usado en contexto de expresión (después de := o en condición)
+      // Simplificación: marcar solo si fue visto pero no está en la tabla de símbolos
+      // (se filtra para no duplicar errores ya reportados por el parser)
+      const alreadyInSyntax = parse.errors.some(e => e.val === tok.value);
+      if (!alreadyInSyntax) {
+        // No reportar el identificador raíz (nombre del paddock) ni funciones
+        const idx = currentTokens.indexOf(tok);
+        const prev = currentTokens[idx - 1];
+        const isPaddockName = prev?.type === 'PADDOCK';
+        const isSkillName   = prev?.type === 'SKILL';
+        if (!isPaddockName && !isSkillName) {
+          semanticErrors.push({ type:'SEMÁNTICO', msg:`Variable '${tok.value}' usada sin declarar`, line:tok.line, col:tok.col, val:tok.value });
+        }
+      }
+    }
+  });
+  semanticErrors.forEach(e => currentErrors.push(e));
+
+  // ── Inyectar errores en el árbol como nodos hijos del nodo raíz ──
+  if (currentTree) {
+    // Errores léxicos → nodo rojo por cada uno
+    if (lex.errors.length > 0) {
+      const lexBranch = {
+        label: `Errores Léxicos (${lex.errors.length})`,
+        children: [],
+        isError: true,
+        errorType: 'LÉXICO'
+      };
+      lex.errors.forEach(e => {
+        lexBranch.children.push({
+          label: `${e.msg} — "${e.val}"`,
+          children: [],
+          isError: true,
+          errorType: 'LÉXICO',
+          errorLine: e.line,
+          errorCol: e.col
+        });
+      });
+      currentTree.children.unshift(lexBranch);
+    }
+
+    // Errores semánticos → nodo violeta
+    if (semanticErrors.length > 0) {
+      const semBranch = {
+        label: `Errores Semánticos (${semanticErrors.length})`,
+        children: [],
+        isError: true,
+        errorType: 'SEMÁNTICO'
+      };
+      semanticErrors.forEach(e => {
+        semBranch.children.push({
+          label: `${e.msg}`,
+          children: [],
+          isError: true,
+          errorType: 'SEMÁNTICO',
+          errorLine: e.line,
+          errorCol: e.col
+        });
+      });
+      currentTree.children.unshift(semBranch);
+    }
   }
 
   const realToks = currentTokens.filter(t => t.type !== 'EOF');
@@ -618,13 +726,20 @@ function renderTab(name) {
 
   else if (name === 'errors') {
     if (!currentErrors.length) { body.innerHTML = '<span class="success-msg">¡Carrera Perfecta! Sin errores.</span>'; return; }
-    const rows = currentErrors.map(e =>
-      `<div class="e-row">
-        <span class="e-type">${e.type}</span>
+    const rows = currentErrors.map(e => {
+      const typeNorm = (e.type || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      const typeClass = typeNorm.includes('lexico') || typeNorm.includes('léxico')
+        ? 'e-type e-type-lexico'
+        : typeNorm.includes('semantico') || typeNorm.includes('semántico')
+          ? 'e-type e-type-semantico'
+          : 'e-type e-type-sintactico';
+      return `<div class="e-row">
+        <span class="${typeClass}">${e.type}</span>
         <span style="color:var(--text-muted)">L${e.line}:C${e.col}</span>
         <span style="color:var(--uma-gold)">"${esc(e.val)}"</span>
         <span class="e-msg">${e.msg}</span>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     body.innerHTML = `<div class="e-header"><span>Tipo</span><span>Pos.</span><span>Valor</span><span>Descripción</span></div>${rows}`;
   }
 }
