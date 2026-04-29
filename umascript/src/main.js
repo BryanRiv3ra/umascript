@@ -8,6 +8,7 @@ const { Lexer }                 = require('./lexer/lexer');
 const { ErrorTable }            = require('./tables/errorTable');
 const { SymbolTable }           = require('./tables/symbolTable');
 const { TokenType }             = require('./lexer/tokens');
+const { Parser }                = require('./parser/parser');
 
 // ============================================
 // Leer el archivo fuente .uma
@@ -157,17 +158,31 @@ function main() {
   // 5. Construir tabla de símbolos
   buildSymbolTable(tokens, symbolTable, errorTable);
 
-  // 6. Mostrar resultados
+  // 6. Ejecutar el análisis sintáctico
+  console.log('🌳 Ejecutando análisis sintáctico...');
+  const parser = new Parser(tokens);
+  const { tree, errors: parseErrors } = parser.parse();
+
+  // 7. Pasar errores del parser a la tabla de errores
+  for (const err of parseErrors) {
+    errorTable.addError('SINTACTICO', err.message, err.line, err.column, err.value);
+  }
+
+  // 8. Mostrar resultados
   printTokens(tokens);
   symbolTable.print();
   errorTable.print();
+  parser.printTree(tree);
 
-  // 7. Resumen final
+  // 9. Resumen final
   console.log('\n══════════════════════════════════════');
   if (!errorTable.hasErrors()) {
-    console.log('✅ Análisis léxico completado sin errores.');
+    console.log('✅ Análisis completado sin errores.');
   } else {
-    console.log(`⚠️  Análisis léxico completado con ${errorTable.toArray().length} error(es).`);
+    const lexErrs = errorTable.getLexicErrors().length;
+    const synErrs = errorTable.getSyntaxErrors().length;
+    console.log(`⚠️  Análisis completado con ${errorTable.toArray().length} error(es).`);
+    console.log(`    📋 Léxicos: ${lexErrs} | Sintácticos: ${synErrs}`);
   }
   console.log('══════════════════════════════════════\n');
 }

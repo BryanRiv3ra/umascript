@@ -192,20 +192,25 @@ function runParser(tokens) {
   const adv   = () => toks[pos++] ?? null;
   const isEnd = () => pos >= toks.length;
 
-  function expect(type) {
+  function expect(type, parent) {
     const t = cur();
     if (t?.type === type) return adv();
-    errors.push({ type:'SINTACTICO', msg:`Se esperaba '${type}', se encontró '${t?.type ?? "EOF"}'`, line:t?.line??0, col:t?.col??0, val:t?.value??'' });
+    const msg = `Se esperaba '${type}', encontró '${t?.type ?? "EOF"}'`;
+    errors.push({ type:'SINTACTICO', msg, line:t?.line??0, col:t?.col??0, val:t?.value??'' });
+    if (parent) parent.children.push(errNode(`${msg}`, 'SINTÁCTICO', t?.line??0, t?.col??0));
     return null;
   }
 
-  function node(label, children = []) { return { label, children }; }
+  function node(label, children = []) { return { label, children, isError: false }; }
+  function errNode(msg, errType, line, col) {
+    return { label: `❌ ${msg}`, children: [], isError: true, errorType: errType || 'SINTÁCTICO', errorLine: line || 0, errorCol: col || 0 };
+  }
 
   function parseProgram() {
     const n = node('Programa');
-    expect('PADDOCK'); n.children.push(node('paddock'));
+    expect('PADDOCK', n); n.children.push(node('paddock'));
     if (cur()?.type === 'IDENTIFIER') n.children.push(node(adv().value));
-    expect('LBRACE'); n.children.push(node('{'));
+    expect('LBRACE', n); n.children.push(node('{'));
     const body = node('Cuerpo');
     while (!isEnd() && cur()?.type !== 'RBRACE' && cur()?.type !== 'FINISH') {
       const s = parseStatement(); if (s) body.children.push(s); else break;
@@ -249,15 +254,15 @@ function runParser(tokens) {
   }
 
   function parseAnnounce() {
-    const n = node('announce'); adv(); expect('LPAREN');
-    n.children.push(parseExpr()); expect('RPAREN');
+    const n = node('announce'); adv(); expect('LPAREN', n);
+    n.children.push(parseExpr()); expect('RPAREN', n);
     if (cur()?.type === 'SEMICOLON') adv();
     return n;
   }
 
   function parseIf() {
     const n = node('turf / dirt'); adv(); n.children.push(node('turf'));
-    expect('LPAREN'); n.children.push(parseExpr()); expect('RPAREN');
+    expect('LPAREN', n); n.children.push(parseExpr()); expect('RPAREN', n);
     n.children.push(parseBlock('Bloque-turf'));
     if (cur()?.type === 'DIRT') { adv(); n.children.push(node('dirt')); n.children.push(parseBlock('Bloque-dirt')); }
     return n;
@@ -266,7 +271,7 @@ function runParser(tokens) {
   function parseLoop() {
     const tok = adv(); const n = node(`${tok.value} (bucle)`); n.children.push(node(tok.value));
     if (tok.type !== 'LONGRUN') {
-      expect('LPAREN');
+      expect('LPAREN', n);
       const init = node('init');
       if (cur()?.type === 'IDENTIFIER') {
         init.children.push(node(adv().value));
@@ -280,7 +285,7 @@ function runParser(tokens) {
         inc.children.push(node(adv().value));
         if (cur()?.type === 'ASSIGN') { adv(); inc.children.push(node(':=')); inc.children.push(parseExpr()); }
       }
-      n.children.push(inc); expect('RPAREN');
+      n.children.push(inc); expect('RPAREN', n);
     }
     n.children.push(parseBlock('Cuerpo')); return n;
   }
@@ -288,10 +293,10 @@ function runParser(tokens) {
   function parseSkill() {
     const n = node('skill (función)'); adv(); n.children.push(node('skill'));
     if (cur()?.type === 'IDENTIFIER') n.children.push(node(adv().value));
-    expect('LPAREN');
+    expect('LPAREN', n);
     const params = node('parámetros');
     while (!isEnd() && cur()?.type !== 'RPAREN') { params.children.push(node(adv().value)); if (cur()?.type === 'COMMA') adv(); }
-    expect('RPAREN'); n.children.push(params);
+    expect('RPAREN', n); n.children.push(params);
     n.children.push(parseBlock('Cuerpo')); return n;
   }
 
@@ -301,9 +306,9 @@ function runParser(tokens) {
   }
 
   function parseBlock(label) {
-    const n = node(label); expect('LBRACE');
+    const n = node(label); expect('LBRACE', n);
     while (!isEnd() && cur()?.type !== 'RBRACE') { const s = parseStatement(); if (s) n.children.push(s); else break; }
-    expect('RBRACE'); return n;
+    expect('RBRACE', n); return n;
   }
 
   function parseExpr() { return parseComparison(); }
@@ -352,12 +357,15 @@ function runParser(tokens) {
 function renderTree(root) {
   if (!root) return '<span class="empty-msg">Sin árbol generado.</span>';
 
-  const NODE_W = 120, NODE_H = 34, PADY = 60, PADX = 20;
+  const ERR_NODE_W = 220, NODE_W = 120, NODE_H = 34, PADY = 60, PADX = 20;
+
+  function getNodeW(n) { return n.isError ? ERR_NODE_W : NODE_W; }
 
   function calcSize(n) {
-    if (!n.children || n.children.length === 0) { n._w = NODE_W + PADX; return; }
+    const nw = getNodeW(n);
+    if (!n.children || n.children.length === 0) { n._w = nw + PADX; return; }
     n.children.forEach(calcSize);
-    n._w = Math.max(n.children.reduce((s, c) => s + c._w, 0), NODE_W + PADX);
+    n._w = Math.max(n.children.reduce((s, c) => s + c._w, 0), nw + PADX);
   }
 
   function assignPos(n, x, y) {
@@ -370,7 +378,7 @@ function renderTree(root) {
 
   function collectEdges(n, arr = []) {
     (n.children || []).forEach(c => {
-      arr.push({ x1: n._x, y1: n._y + NODE_H/2, x2: c._x, y2: c._y - NODE_H/2 });
+      arr.push({ x1: n._x, y1: n._y + NODE_H/2, x2: c._x, y2: c._y - NODE_H/2, isError: c.isError || false });
       collectEdges(c, arr);
     });
     return arr;
@@ -379,10 +387,14 @@ function renderTree(root) {
   calcSize(root); assignPos(root, 0, 40);
   const allNodes = collectNodes(root);
   const allEdges = collectEdges(root);
-  const maxX = Math.max(...allNodes.map(n => n._x + NODE_W/2)) + PADX;
+  const maxX = Math.max(...allNodes.map(n => n._x + getNodeW(n)/2)) + PADX;
   const maxY = Math.max(...allNodes.map(n => n._y + NODE_H)) + PADY;
 
-  function nodeColor(label) {
+  function nodeColor(n) {
+    const label = n.label;
+    // ── Nodos de error → ROJO ──
+    if (n.isError)                       return { fill:'#3a0808', stroke:'#f44336', text:'#ff5252' };
+    if (label === 'Errores Léxicos')     return { fill:'#3a0808', stroke:'#f44336', text:'#ff5252' };
     if (label === 'Programa')            return { fill:'#1a1040', stroke:'#ff79b4', text:'#ffb3d1' };
     if (label === 'Cuerpo')              return { fill:'#0d1f35', stroke:'#2196f3', text:'#64b5f6' };
     if (label.startsWith('Declaración')) return { fill:'#0d2518', stroke:'#4caf50', text:'#81c784' };
@@ -398,19 +410,34 @@ function renderTree(root) {
 
   function trunc(str, max = 14) { return str.length > max ? str.substring(0, max-1) + '…' : str; }
 
-  const edges = allEdges.map(e =>
-    `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" stroke="#3e4a57" stroke-width="1.5"/>`
-  ).join('');
+  const edges = allEdges.map(e => {
+    const color = e.isError ? '#f44336' : '#3e4a57';
+    const dash  = e.isError ? ' stroke-dasharray="6,3"' : '';
+    return `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" stroke="${color}" stroke-width="1.5"${dash}/>`;
+  }).join('');
 
   const nodes = allNodes.map(n => {
-    const col = nodeColor(n.label);
-    const rx = n._x - NODE_W/2, ry = n._y - NODE_H/2;
-    return `<g>
-      <rect x="${rx}" y="${ry}" width="${NODE_W}" height="${NODE_H}" rx="8"
-            fill="${col.fill}" stroke="${col.stroke}" stroke-width="1.5"/>
-      <text x="${n._x}" y="${n._y + 5}" text-anchor="middle"
-            font-family="Consolas,monospace" font-size="11" fill="${col.text}">${trunc(n.label)}</text>
-    </g>`;
+    const col = nodeColor(n);
+    const nw  = getNodeW(n);
+    const rx  = n._x - nw/2, ry = n._y - NODE_H/2;
+    let svg = `<g>`;
+    // Glow effect for error nodes
+    if (n.isError) {
+      svg += `<rect x="${rx-2}" y="${ry-2}" width="${nw+4}" height="${NODE_H+4}" rx="10" fill="none" stroke="#f44336" stroke-width="1" opacity="0.4"/>`;
+    }
+    svg += `<rect x="${rx}" y="${ry}" width="${nw}" height="${NODE_H}" rx="8"
+            fill="${col.fill}" stroke="${col.stroke}" stroke-width="${n.isError ? 2.5 : 1.5}"/>`;
+    if (n.isError && n.errorType) {
+      // Badge with error type
+      const badgeText = n.errorType;
+      const badgeW = badgeText.length * 6 + 10;
+      svg += `<rect x="${n._x - badgeW/2}" y="${ry - 14}" width="${badgeW}" height="14" rx="4" fill="#f44336"/>`;
+      svg += `<text x="${n._x}" y="${ry - 4}" text-anchor="middle" font-family="Rajdhani,sans-serif" font-size="9" font-weight="700" fill="#fff">${badgeText}</text>`;
+    }
+    svg += `<text x="${n._x}" y="${n._y + 5}" text-anchor="middle"
+            font-family="Consolas,monospace" font-size="${n.isError ? 10 : 11}" fill="${col.text}">${trunc(n.label, n.isError ? 28 : 14)}</text>`;
+    svg += `</g>`;
+    return svg;
   }).join('');
 
   return `<div style="overflow:auto;width:100%;height:100%">
@@ -504,6 +531,15 @@ function iniciarCarrera() {
   const parse = runParser(currentTokens);
   currentTree = parse.tree;
   parse.errors.forEach(e => currentErrors.push(e));
+
+  // Inyectar errores léxicos como rama del árbol
+  if (lex.errors.length > 0 && currentTree) {
+    const lexErrBranch = { label: 'Errores Léxicos', children: [], isError: true, errorType: 'LÉXICO' };
+    lex.errors.forEach(e => {
+      lexErrBranch.children.push({ label: `❌ L${e.line}:C${e.col} ${e.msg}`, children: [], isError: true, errorType: 'LÉXICO', errorLine: e.line, errorCol: e.col });
+    });
+    currentTree.children.unshift(lexErrBranch);
+  }
 
   const realToks = currentTokens.filter(t => t.type !== 'EOF');
   document.getElementById('status-tokens').textContent  = `Tokens: ${realToks.length}`;
